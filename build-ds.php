@@ -111,6 +111,8 @@ if(isset($options['projectRoot'])) {
     $projectRoot = $options['projectRoot'];
 }
 
+//unlinkProject($projectRoot);
+
 foreach ($repoPaths as $repoPath) {
     linkRepo(trim($repoPath), $projectRoot);
 }
