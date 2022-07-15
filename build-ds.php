@@ -33,10 +33,15 @@ function scanFiles(string $path): array
  * @param string $module
  * @param string $path
  */
-function linkModule(string $root, string $module, string $path): void
+function linkModule(string $root, string $module, string $path, string $namespace): void
 {
+
+    $nameSpaceDir = DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . $namespace;
+    if ($namespace != 'Magento' && !file_exists($root . $nameSpaceDir)) {
+        mkdir($root . $nameSpaceDir);
+    }
     foreach (scanFiles($path) as $filename) {
-        $target = DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . 'Magento' . DIRECTORY_SEPARATOR
+        $target = DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . $namespace . DIRECTORY_SEPARATOR
             . $module . preg_replace('#^' . preg_quote($path) . "#", '', $filename);
         if (!file_exists(dirname($root . $target))) {
             @symlink(dirname(realpath($filename)), dirname($root . $target));
@@ -79,7 +84,7 @@ function unlinkProject(string $projectRoot): void
  * @param string $repoPath
  * @param string $projectRoot
  */
-function linkRepo(string $repoPath, string $projectRoot): void
+function linkRepo(string $repoPath, string $projectRoot, string $namespace): void
 {
     $topLevelElements = scandir($repoPath);
     foreach ($topLevelElements as $element) {
@@ -90,7 +95,7 @@ function linkRepo(string $repoPath, string $projectRoot): void
             && file_exists($path . DIRECTORY_SEPARATOR . 'etc/module.xml')
             && file_exists($path . DIRECTORY_SEPARATOR . 'composer.json')
         ) {
-            linkModule($projectRoot, $element, $path);
+            linkModule($projectRoot, $element, $path, $namespace);
             echo sprintf("Module %s linked", $element) . PHP_EOL;
         } elseif (is_dir($path) && $element == 'dev') {
             linkUtils($projectRoot, $element, $path);
@@ -99,7 +104,7 @@ function linkRepo(string $repoPath, string $projectRoot): void
     }
 }
 
-$options = getopt('', ['repoPath:', 'projectRoot:']);
+$options = getopt('', ['repoPath:', 'projectRoot:', 'namespace:']);
 
 $repoPaths = [];
 if(isset($options['repoPath'])) {
@@ -111,8 +116,14 @@ if(isset($options['projectRoot'])) {
     $projectRoot = $options['projectRoot'];
 }
 
+$namespace = 'Magento';
+if(isset($options['namespace'])) {
+    $namespace = trim($options['namespace']);
+    var_dump($namespace);
+}
+
 //unlinkProject($projectRoot);
 
 foreach ($repoPaths as $repoPath) {
-    linkRepo(trim($repoPath), $projectRoot);
+    linkRepo(trim($repoPath), $projectRoot, $namespace);
 }
